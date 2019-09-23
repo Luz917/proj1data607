@@ -1,0 +1,140 @@
+---
+title: "Project 1 Data 607"
+author: "Maryluz Cruz"
+date: "9/19/2019"
+output:
+  html_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Assignment
+
+In this project, you’re given a text file with chess tournament results where the information has some structure. Your job is to create an R Markdown file that generates a .CSV file (that could for example be imported into a SQL database) with the following information for all of the players:
+
+Player’s Name, Player’s State, Total Number of Points, Player’s Pre-Rating, and Average Pre Chess Rating of Opponents
+
+For the first player, the information would be:
+
+Gary Hua, ON, 6.0, 1794, 1605
+
+1605 was calculated by using the pre-tournament opponents’ ratings of 1436, 1563, 1600, 1610, 1649, 1663, 1716, and dividing by the total number of games played.
+
+##Include the Package Stringr
+
+In order to to this assignment we need to include the package stringr
+
+```{r}
+require(stringr)
+```
+
+##Insert Table into R
+
+In order to do that I entered the .txt file into my github repository and I read in the url. 
+
+```{r}
+tournament_info <- readLines("https://raw.githubusercontent.com/Luz917/tournamentinfo/master/tournamentinfo.txt", warn=FALSE)##this was needed because it gave a warning about incomplete final line 
+```
+
+Head of the table
+
+```{r}
+head(tournament_info)
+```
+
+Tail of the Table
+
+```{r}
+tail(tournament_info)
+```
+
+##Cleaning the table 
+
+We clean the table removing all lines with --------- and the column names, to get ready for the extractions. 
+
+```{r}
+tournament_c<-unlist(str_extract_all(tournament_info,"[:alpha:]+.{2,}"))
+tournament_c<-tournament_c[c(3:130)]
+head(tournament_c)
+```
+
+##Player ID
+
+First step is to get the Player ID. Since all the player id numbers were removed I have to input the string. I may have cleaned it too much. 
+
+```{r}
+player_id<-c(1:64)
+player_id
+```
+
+##Players Name
+
+Next we extract all of the players names. 
+
+```{r}
+pname<-unlist(str_extract_all(tournament_c,"[:alpha:]+(\\s\\w+ ([:alpha:])*[:alpha:]*)"))
+pname<-str_trim(pname,side = "right")##this removes the spacing 
+pname
+```
+
+##Player's State
+
+Next step is to extraxct the players state. 
+
+```{r}
+state<-unlist(str_extract_all(tournament_c,"\\b^[:alpha:]{2}\\b"))
+state
+```
+
+##Player's Points
+
+Next step we extract all of the player's points.
+
+```{r}
+points<-unlist(str_extract_all(tournament_c,"[:digit:][:punct:][:digit:]"))
+points
+```
+
+##Player's Pre Rating 
+
+Next we have to get the players pre rating. This is a little more complicated since we have to distinguish between the pre and the post rating and the only way to do that is to include R: in the extraction. But since some of the ratings are not four numbers or include a P and a few numbers after it I decided to do each case by step until all are 3 to four letters. 
+
+```{r}
+pre_rating<-unlist(str_extract_all(tournament_c,"R:\\s+[:alnum:]*"))
+pre_rating<-str_replace_all(pre_rating,"R:","")##this removes the R:
+pre_rating<-str_replace_all(pre_rating,"P\\d+","") ##this removes P and the numbers follewed by the P
+pre_rating<-str_trim(pre_rating,side = "both")
+pre_rating
+```
+
+##Average Opponet Rating
+
+This is the part where I get confused and was unable to calculate the average opponet rating, but I did extract the wins and losses. 
+
+```{r}
+wins_losses<-unlist(str_extract_all(tournament_c,"\\w \\s\\d+"))
+head(wins_losses)##shows the first player 
+tail(wins_losses)##shows the last player
+```
+
+##Create the final table 
+
+We have to put the extracted data and join them to create the columns and make a data frame.
+
+```{r}
+final_table_chess<-data.frame(player_id,pname, state, points,pre_rating)
+head(final_table_chess)
+```
+
+##Create the csv file.
+
+```{r}
+write.csv(final_table_chess,"Final_Table_Chess.csv",row.names = FALSE)
+read.csv("Final_Table_Chess.csv")
+```
+
+
+
